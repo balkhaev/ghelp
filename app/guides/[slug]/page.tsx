@@ -2,17 +2,16 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 import {
   Card,
-  CardHeader,
   CardTitle,
   CardDescription,
-  CardContent,
 } from "@/components/ui/card";
 import HeroBuilds from "@/components/HeroBuilds";
+import type { Hero, Build } from "@/types/models";
 
-interface PageProps {
-  params: Promise<{ slug: string }>;
-  searchParams?: { bid?: string };
-}
+type PageProps = {
+  params?: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
 const slugify = (name: string) =>
   name
@@ -25,7 +24,7 @@ const slugify = (name: string) =>
 const isDev = process.env.NODE_ENV === "development";
 
 export default async function HeroPage({ params, searchParams }: PageProps) {
-  const { slug } = await params;
+  const { slug } = params ? await params : { slug: "" };
 
   const { data: heroes, error } = await supabase
     .from("heroes")
@@ -36,7 +35,7 @@ export default async function HeroPage({ params, searchParams }: PageProps) {
     return <div className="container mx-auto p-8">Ошибка загрузки данных</div>;
   }
 
-  const hero = heroes.find((h: any) => slugify(h.name) === slug);
+  const hero = (heroes as unknown as Hero[]).find((h) => slugify(h.name) === slug);
 
   if (!hero) {
     return <div className="container mx-auto p-8">Герой не найден</div>;
@@ -44,8 +43,10 @@ export default async function HeroPage({ params, searchParams }: PageProps) {
 
   // определяем выбранный билд
   let selectedIdx = 0;
-  if (searchParams?.bid && hero?.builds) {
-    const idx = (hero.builds as any[]).findIndex((b) => b.id?.toString() === searchParams.bid);
+  const sp = searchParams ? await searchParams : undefined;
+  const rawBid = sp ? sp["bid"] : undefined;
+  if (rawBid && hero?.builds) {
+    const idx = (hero.builds ?? []).findIndex((b) => b.id?.toString() === rawBid);
     if (idx !== -1) selectedIdx = idx;
   }
 
@@ -74,7 +75,7 @@ export default async function HeroPage({ params, searchParams }: PageProps) {
       </Card>
 
       <div className="w-full max-w-5xl">
-        <HeroBuilds builds={(hero.builds ?? []) as any} selectedIndex={selectedIdx} />
+        <HeroBuilds builds={(hero.builds ?? []) as Build[]} selectedIndex={selectedIdx} />
       </div>
     </div>
   );

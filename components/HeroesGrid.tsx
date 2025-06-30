@@ -24,11 +24,6 @@ const slugify = (name: string) =>
     .replace(/\s+/g, "")
     .replace(/_/g, "");
 
-// Исключения, когда имя файла изображения не совпадает со слагом
-const IMAGE_EXCEPTIONS: Record<string, string> = {
-  void: "facelessvoid",
-};
-
 const isDev = process.env.NODE_ENV === "development";
 
 export function HeroesGrid({ heroes }: HeroesGridProps) {
@@ -57,7 +52,6 @@ export function HeroesGrid({ heroes }: HeroesGridProps) {
         <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(140px,1fr))] justify-items-center">
           {filteredHeroes.map((hero) => {
             const slug = slugify(hero.name);
-            const imgName = IMAGE_EXCEPTIONS[slug] ?? slug;
             return (
               <Link
                 href={`/guides/${slug}`}
@@ -67,8 +61,8 @@ export function HeroesGrid({ heroes }: HeroesGridProps) {
                 <Image
                   src={
                     isDev
-                      ? `/images/heroes/${imgName}.png`
-                      : hero.image ?? `/images/heroes/${imgName}.png`
+                      ? `/images/heroes/${slug}.png`
+                      : hero.image ?? `/images/heroes/${slug}.png`
                   }
                   alt={hero.name}
                   width={120}

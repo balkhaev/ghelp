@@ -26,7 +26,9 @@ export default async function AdminBuildsPage() {
       </Card>
 
       {/* Клиентский редактор */}
-      {heroes && <AdminBuildsClient heroes={heroes as any} />}
+      {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+      {/* @ts-ignore несовпадение типов */}
+      {heroes && <AdminBuildsClient heroes={heroes} />}
     </div>
   );
 } 

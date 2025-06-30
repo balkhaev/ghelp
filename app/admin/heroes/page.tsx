@@ -22,7 +22,9 @@ export default async function AdminHeroesPage() {
           <CardTitle className="text-2xl">Редактирование героев</CardTitle>
         </CardHeader>
       </Card>
-      {heroes && <AdminHeroesClient heroes={heroes as any} />}
+      {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+      {/* @ts-ignore несовпадение типов */}
+      {heroes && <AdminHeroesClient heroes={heroes} />}
     </div>
   );
 } 

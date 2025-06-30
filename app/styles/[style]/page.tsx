@@ -8,9 +8,10 @@ import {
   CardContent,
 } from "@/components/ui/card";
 
-interface PageProps {
-  params: { style: string };
-}
+type PageProps = {
+  params?: Promise<{ style: string }>;
+  searchParams?: Promise<Record<string, unknown>>;
+};
 
 // helper slugify like in other components (remove diacritics, spaces etc.)
 const slugify = (name: string) =>
@@ -21,8 +22,10 @@ const slugify = (name: string) =>
     .replace(/\s+/g, "")
     .replace(/_/g, "");
 
+const mainBranches = ["main1", "main2", "alt"] as const;
+
 export default async function StylePage({ params }: PageProps) {
-  const { style } = params; // уже без .png
+  const { style } = params ? await params : { style: "" }; // уже без .png
 
   // Загружаем героев с билдами
   const { data: heroes, error } = await supabase
@@ -42,10 +45,10 @@ export default async function StylePage({ params }: PageProps) {
     buildIndex: number;
   }[] = [];
 
-  heroes?.forEach((hero: any) => {
-    hero.builds?.forEach((build: any, idx: number) => {
-      const branches: string[] = ["main1", "main2", "alt"].flatMap((k) => {
-        const val = (build.branch as Record<string, string>)[k];
+  heroes?.forEach((hero) => {
+    (hero.builds ?? []).forEach((build, idx) => {
+      const branches: string[] = mainBranches.flatMap((k) => {
+        const val = build.branch![k as keyof typeof build.branch] as string;
         return val ? val.split("/").map((s) => s.trim()) : [];
       });
       if (branches.includes(style)) {

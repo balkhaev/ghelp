@@ -68,6 +68,24 @@ export type Database = {
         }
         Relationships: []
       }
+      styles: {
+        Row: {
+          id: number
+          image: string | null
+          name: string
+        }
+        Insert: {
+          id?: never
+          image?: string | null
+          name: string
+        }
+        Update: {
+          id?: never
+          image?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

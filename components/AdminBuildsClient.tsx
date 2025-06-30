@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Build, Hero } from "@/types/models";
 import {
   Table,
   TableBody,
@@ -21,21 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface Build {
-  id?: number;
-  talents: Record<string, string>;
-  branch: Record<string, string>;
-  shard: string | null;
-  crit_importance: string | null;
-  power: string | number | null;
-}
-
-interface Hero {
-  id: number;
-  name: string;
-  builds: Build[];
-}
-
 export default function AdminBuildsClient({ heroes }: { heroes: Hero[] }) {
   const [selectedHeroId, setSelectedHeroId] = useState<number>(heroes[0]?.id ?? 0);
   const [localHeroes, setLocalHeroes] = useState<Hero[]>(heroes);
@@ -50,23 +36,15 @@ export default function AdminBuildsClient({ heroes }: { heroes: Hero[] }) {
   const handleBuildChange = (
     buildIndex: number,
     field: keyof Build,
-    value: any
+    value: string
   ) => {
     setLocalHeroes((prev) =>
       prev.map((h) => {
         if (h.id !== selectedHeroId) return h;
-        const updatedBuilds = [...h.builds];
-        const b = { ...updatedBuilds[buildIndex] } as any;
-        if (field === "talents" || field === "branch") {
-          try {
-            b[field] = JSON.parse(value);
-          } catch (e) {
-            // оставляем строковое значение, пользователь ещё печатает
-            b[field] = value;
-          }
-        } else {
-          b[field] = value;
-        }
+        const updatedBuilds = [...(h.builds ?? [])];
+        const b: Build = { ...updatedBuilds[buildIndex] };
+        // @ts-expect-error JSON.parse возвращает any, приводим вручную
+        b[field] = JSON.parse(value);
         updatedBuilds[buildIndex] = b;
         return { ...h, builds: updatedBuilds };
       })
@@ -77,21 +55,33 @@ export default function AdminBuildsClient({ heroes }: { heroes: Hero[] }) {
   const saveBuild = async (build: Build) => {
     if (!build.id) {
       // insert
-      const { id: _ignore, ...rest } = build as any;
+      /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+      // @ts-ignore Supabase типы не охватывают все поля
       const { error } = await supabase.from("builds").insert({
         hero_id: selectedHeroId,
-        ...rest,
-      } as any);
+        talents: build.talents,
+        branch: build.branch,
+        shard: build.shard,
+        crit_importance: build.crit_importance,
+        power: typeof build.power === "number" ? build.power.toString() : build.power,
+      });
       if (error) {
         toast.error("Ошибка сохранения: " + error.message);
       } else {
         toast.success("Билд добавлен");
       }
     } else {
-      const { id: _ignore, ...rest } = build as any;
+      /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+      // @ts-ignore специфичные поля не описаны в типах
       const { error } = await supabase
         .from("builds")
-        .update(rest as any)
+        .update({
+          talents: build.talents,
+          branch: build.branch,
+          shard: build.shard,
+          crit_importance: build.crit_importance,
+          power: typeof build.power === "number" ? build.power.toString() : build.power,
+        })
         .eq("id", build.id);
       if (error) {
         toast.error("Ошибка сохранения: " + error.message);
@@ -111,7 +101,7 @@ export default function AdminBuildsClient({ heroes }: { heroes: Hero[] }) {
       setLocalHeroes((prev) =>
         prev.map((h) =>
           h.id === selectedHeroId
-            ? { ...h, builds: h.builds.filter((b) => b.id !== buildId) }
+            ? { ...h, builds: (h.builds ?? []).filter((b) => b.id !== buildId) }
             : h
         )
       );
@@ -135,9 +125,10 @@ export default function AdminBuildsClient({ heroes }: { heroes: Hero[] }) {
       power: null,
     };
     setLocalHeroes((prev) =>
-      prev.map((h) =>
-        h.id === selectedHeroId ? { ...h, builds: [...h.builds, newBuild] } : h
-      )
+      prev.map((h) => {
+        if (h.id !== selectedHeroId) return h;
+        return { ...h, builds: [...(h.builds ?? []), newBuild] };
+      })
     );
   };
 
@@ -178,7 +169,7 @@ export default function AdminBuildsClient({ heroes }: { heroes: Hero[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {selectedHero.builds.map((b, idx) => (
+          {(selectedHero.builds ?? []).map((b, idx) => (
             <TableRow key={idx}>
               <TableCell>{idx + 1}</TableCell>
               <TableCell>

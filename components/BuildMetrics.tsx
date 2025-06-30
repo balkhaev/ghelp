@@ -1,43 +1,13 @@
-"use client"
+"use client";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { getPowerBadgeClass } from "@/lib/powerBadge";
 
 interface BuildMetricsProps {
   shard: string | null;
   crit_importance: string | null;
   power: string | number | null;
-}
-
-function getPowerBadgeClass(powerVal: BuildMetricsProps["power"]) {
-  if (powerVal === null || powerVal === undefined) return "bg-muted text-foreground";
-
-  if (typeof powerVal === "string") {
-    // оставляем только цифры
-    const digits = powerVal.replace(/\D/g, "");
-
-    // 3 и 4 вместе – показываем градиент
-    if (digits === "34" || digits === "43") {
-      return "bg-gradient-to-r from-yellow-400 to-green-500 text-black";
-    }
-
-    // используем первую цифру для числа
-    if (digits.length > 0) {
-      powerVal = Number(digits[0]);
-    }
-  }
-  const p = typeof powerVal === "number" ? powerVal : Number(powerVal);
-  if (isNaN(p)) return "bg-muted text-foreground";
-  if (p >= 5) return "bg-red-600 text-white";
-  if (p === 4) return "bg-yellow-400 text-black";
-  if (p === 3) return "bg-green-600 text-white";
-  if (p === 2) return "bg-gray-500 text-white";
-  return "bg-muted text-foreground";
 }
 
 function getShardBadgeClass(shardVal: BuildMetricsProps["shard"]) {
@@ -66,7 +36,11 @@ function getCritCardClass(critVal: BuildMetricsProps["crit_importance"]) {
   }
 }
 
-export default function BuildMetrics({ shard, crit_importance, power }: BuildMetricsProps) {
+export default function BuildMetrics({
+  shard,
+  crit_importance,
+  power,
+}: BuildMetricsProps) {
   return (
     <div className="grid md:grid-cols-3 gap-4">
       {/* Сила */}
@@ -95,9 +69,11 @@ export default function BuildMetrics({ shard, crit_importance, power }: BuildMet
           <CardTitle>Крит</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center text-center">
-          <span className="text-lg font-semibold">{crit_importance ?? "-"}</span>
+          <span className="text-lg font-semibold">
+            {crit_importance ?? "-"}
+          </span>
         </CardContent>
       </Card>
     </div>
   );
-} 
+}

@@ -12,6 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import { getPowerBadgeClass } from "@/lib/powerBadge";
+import { slugify } from "@/lib/slugify";
 
 interface Build {
   id?: number;
@@ -37,38 +39,7 @@ type BuildItem = {
   buildIndex: number; // номер билда у героя начиная с 1
 };
 
-// helper to slugify hero name (for dev image paths)
-const slugify = (name: string) =>
-  name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "")
-    .replace(/_/g, "");
-
 const isDev = process.env.NODE_ENV === "development";
-
-// утилита для подсветки силы (скопировано из BuildMetrics)
-function getPowerBadgeClass(powerVal: Build["power"]) {
-  if (powerVal === null || powerVal === undefined) return "bg-muted text-foreground";
-
-  if (typeof powerVal === "string") {
-    const digits = powerVal.replace(/\D/g, "");
-    if (digits === "34" || digits === "43") {
-      return "bg-gradient-to-r from-yellow-400 to-green-500 text-black";
-    }
-    if (digits.length > 0) {
-      powerVal = Number(digits[0]);
-    }
-  }
-  const p = typeof powerVal === "number" ? powerVal : Number(powerVal);
-  if (isNaN(p)) return "bg-muted text-foreground";
-  if (p >= 5) return "bg-red-600 text-white";
-  if (p === 4) return "bg-yellow-400 text-black";
-  if (p === 3) return "bg-green-600 text-white";
-  if (p === 2) return "bg-gray-500 text-white";
-  return "bg-muted text-foreground";
-}
 
 export default function AllBuildsClient({ heroes }: { heroes: Hero[] }) {
   // формируем плоский список билдов
@@ -80,7 +51,7 @@ export default function AllBuildsClient({ heroes }: { heroes: Hero[] }) {
         heroImage: h.image,
         build: b,
         buildIndex: idx + 1,
-      }))
+      })),
     );
   }, [heroes]);
 
@@ -100,9 +71,10 @@ export default function AllBuildsClient({ heroes }: { heroes: Hero[] }) {
       // фильтр по power
       if (powerFilter !== "all") {
         // вытащим первую цифру силы
-        const digits = typeof item.build.power === "string"
-          ? item.build.power.replace(/\D/g, "")
-          : item.build.power?.toString() ?? "";
+        const digits =
+          typeof item.build.power === "string"
+            ? item.build.power.replace(/\D/g, "")
+            : (item.build.power?.toString() ?? "");
         const firstDigit = digits.charAt(0);
         if (firstDigit !== powerFilter) return false;
       }
@@ -154,14 +126,21 @@ export default function AllBuildsClient({ heroes }: { heroes: Hero[] }) {
       ) : (
         <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 justify-items-center">
           {filteredItems.map((item, idx) => (
-            <Card key={idx} className="w-full max-w-sm p-4 flex flex-col gap-3 items-center text-center">
-              <Link href={`/guides/${slugify(item.heroName)}?bid=${item.build.id}`} className="flex flex-col items-center gap-3">
+            <Card
+              key={idx}
+              className="w-full max-w-sm p-4 flex flex-col gap-3 items-center text-center"
+            >
+              <Link
+                href={`/guides/${slugify(item.heroName)}?bid=${item.build.id}`}
+                className="flex flex-col items-center gap-3"
+              >
                 {/* Картинка героя */}
                 <Image
                   src={
                     isDev
                       ? `/images/heroes/${slugify(item.heroName)}.png`
-                      : item.heroImage ?? `/images/heroes/${slugify(item.heroName)}.png`
+                      : (item.heroImage ??
+                        `/images/heroes/${slugify(item.heroName)}.png`)
                   }
                   alt={item.heroName}
                   width={64}
@@ -175,7 +154,9 @@ export default function AllBuildsClient({ heroes }: { heroes: Hero[] }) {
                 </div>
 
                 {/* Метка силы */}
-                <div className={`${getPowerBadgeClass(item.build.power)} px-3 py-1 rounded-md text-sm font-semibold`}>
+                <div
+                  className={`${getPowerBadgeClass(item.build.power)} px-3 py-1 rounded-md text-sm font-semibold`}
+                >
                   {item.build.power ?? "-"}
                 </div>
 
@@ -183,12 +164,17 @@ export default function AllBuildsClient({ heroes }: { heroes: Hero[] }) {
                 <div className="flex flex-wrap justify-center gap-2">
                   {(["main1", "main2", "alt"] as const)
                     .flatMap((key) => {
-                      const val = (item.build.branch as Record<string, string>)[key];
+                      const val = (item.build.branch as Record<string, string>)[
+                        key
+                      ];
                       return val ? val.split("/").map((s) => s.trim()) : [];
                     })
                     .filter((s) => s.length > 0)
                     .map((style) => (
-                      <Link key={style} href={`/styles/${encodeURIComponent(style)}`}>
+                      <Link
+                        key={style}
+                        href={`/styles/${encodeURIComponent(style)}`}
+                      >
                         <Image
                           src={`/images/styles/${style}.png`}
                           alt={style}
@@ -206,4 +192,4 @@ export default function AllBuildsClient({ heroes }: { heroes: Hero[] }) {
       )}
     </div>
   );
-} 
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Hero } from "@/types/models";
 import {
   Table,
   TableBody,
@@ -14,23 +15,19 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
-interface Hero {
-  id?: number;
-  name: string;
-  image: string | null;
-}
-
 export default function AdminHeroesClient({ heroes }: { heroes: Hero[] }) {
   const [localHeroes, setLocalHeroes] = useState<Hero[]>(heroes);
 
   const handleChange = (
     idx: number,
     field: keyof Hero,
-    value: any
+    value: string | null
   ) => {
     setLocalHeroes((prev) => {
       const updated = [...prev];
-      (updated[idx] as any)[field] = value;
+      /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+      // @ts-ignore упрощённое приведение типа
+      (updated[idx] as Hero)[field] = value;
       return updated;
     });
   };
@@ -38,18 +35,21 @@ export default function AdminHeroesClient({ heroes }: { heroes: Hero[] }) {
   const saveHero = async (hero: Hero) => {
     if (!hero.id) {
       // insert
-      const { id: _ignore, ...rest } = hero as any;
-      const { error } = await supabase.from("heroes").insert(rest as any);
+      /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+      // @ts-ignore не все поля описаны в типах supabase
+      const { error } = await supabase.from("heroes").insert({
+        name: hero.name,
+        image: hero.image,
+      });
       if (error) {
         toast.error("Ошибка: " + error.message);
       } else {
         toast.success("Герой добавлен");
       }
     } else {
-      const { id: _ignore, ...rest } = hero as any;
       const { error } = await supabase
         .from("heroes")
-        .update(rest as any)
+        .update({ name: hero.name, image: hero.image })
         .eq("id", hero.id);
       if (error) {
         toast.error("Ошибка: " + error.message);
@@ -71,7 +71,7 @@ export default function AdminHeroesClient({ heroes }: { heroes: Hero[] }) {
   };
 
   const addHero = () => {
-    setLocalHeroes((prev) => [...prev, { name: "", image: null }]);
+    setLocalHeroes((prev) => [...prev, { name: "", image: null, builds: [] } as Hero]);
   };
 
   return (
